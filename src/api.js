@@ -37,3 +37,22 @@ export function embedUrl(url) {
   if (vm) return `https://player.vimeo.com/video/${vm[1]}`;
   return null;
 }
+
+// ---------- Actualización en vivo ----------
+// El backend avisa cuando algo cambia y las pantallas vuelven a pedir sus datos, sin recargar la página.
+const liveListeners = new Set();
+let liveSource = null;
+export function onLive(fn) {
+  liveListeners.add(fn);
+  if (!liveSource && typeof EventSource !== 'undefined') {
+    let lost = false;
+    liveSource = new EventSource(`${API}/api/events`);
+    liveSource.onmessage = (e) => { try { const ev = JSON.parse(e.data); liveListeners.forEach((f) => f(ev)); } catch { /* mensaje no válido */ } };
+    liveSource.onerror = () => { lost = true; };
+    // Si la conexión se cortó y volvió, se actualiza por si hubo cambios mientras tanto.
+    liveSource.onopen = () => { if (lost) { lost = false; liveListeners.forEach((f) => f({ scope: 'contenido' })); } };
+  }
+  return () => liveListeners.delete(fn);
+}
+// Qué avisos hacen que esta aplicación se actualice.
+export const LIVE_SCOPES = ['contenido'];
