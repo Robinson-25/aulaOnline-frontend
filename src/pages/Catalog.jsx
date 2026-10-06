@@ -6,10 +6,15 @@ import CourseCard from '../CourseCard.jsx';
 
 const FILTERS = [
   ['level', 'Nivel', [['', 'Todos'], ['Principiante', 'Principiante'], ['Intermedio', 'Intermedio'], ['Avanzado', 'Avanzado'], ['Todos los niveles', 'Todos los niveles']]],
-  ['maxPrice', 'Precio', [['', 'Cualquiera'], ['100', 'Hasta S/ 100'], ['150', 'Hasta S/ 150'], ['200', 'Hasta S/ 200']]],
+  ['maxPrice', 'Precio', [['', 'Cualquiera'], ['50', 'Hasta S/ 50'], ['100', 'Hasta S/ 100'], ['150', 'Hasta S/ 150'], ['200', 'Hasta S/ 200']]],
   ['duration', 'Duración', [['', 'Cualquiera'], ['corta', 'Hasta 6 h'], ['media', '6 a 15 h'], ['larga', 'Más de 15 h']]],
   ['rating', 'Calificación', [['', 'Cualquiera'], ['4', '4 estrellas o más'], ['4.5', '4.5 o más']]],
 ];
+// Campos con borde más marcado y letra más oscura; el filtro en uso se resalta.
+const field = 'input border-slate-400 font-medium text-ink placeholder:text-slate-600';
+const on = (v) => (v ? ' border-navy-700 bg-navy-50 font-semibold' : '');
+const lbl = 'mb-1.5 block text-sm font-bold text-ink';
+
 export default function Catalog() {
   const [params, setParams] = useSearchParams();
   const [text, setText] = useState(params.get('q') || '');
@@ -26,29 +31,30 @@ export default function Catalog() {
       <div className="mt-6 flex flex-wrap gap-3">
         <form onSubmit={(e) => { e.preventDefault(); set('q', text.trim()); }} role="search" className="flex min-w-0 flex-1 basis-72 gap-2">
           <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" aria-hidden="true" />
-            <input className="input pl-9" value={text} onChange={(e) => setText(e.target.value)} placeholder="Busca por curso, tema o instructor" aria-label="Buscar cursos" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" aria-hidden="true" />
+            <input className={`${field} pl-9`} value={text} onChange={(e) => setText(e.target.value)} placeholder="Busca por curso, tema o instructor" aria-label="Buscar cursos" />
           </div>
           <button className="btn-primary">Buscar</button>
         </form>
-        <button className="btn-outline lg:hidden" onClick={() => setShow(!show)} aria-expanded={show}><SlidersHorizontal className="h-4 w-4" /> Filtros{active ? ` (${active})` : ''}</button>
-        <select className="input w-auto" aria-label="Ordenar" value={params.get('sort') || ''} onChange={(e) => set('sort', e.target.value)}>
+        <button className="btn-outline border-slate-400 lg:hidden" onClick={() => setShow(!show)} aria-expanded={show}><SlidersHorizontal className="h-4 w-4" /> Filtros{active ? ` (${active})` : ''}</button>
+        <select className={`${field} w-auto`} aria-label="Ordenar" value={params.get('sort') || ''} onChange={(e) => set('sort', e.target.value)}>
           <option value="">Más populares</option><option value="recientes">Más recientes</option><option value="precio_asc">Precio: menor a mayor</option><option value="precio_desc">Precio: mayor a menor</option>
         </select>
       </div>
-      <div className="mt-6 grid gap-8 lg:grid-cols-[230px_1fr]">
-        <aside className={`${show ? 'grid' : 'hidden'} grid-cols-2 gap-4 self-start lg:grid lg:grid-cols-1`} aria-label="Filtros">
-          <label className="block"><span className="label">Categoría</span>
-            <select className="input" value={params.get('category') || ''} onChange={(e) => set('category', e.target.value)}>
-              <option value="">Todas</option>{cats.data?.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
+      <div className="mt-6 grid gap-8 lg:grid-cols-[250px_1fr]">
+        <aside className={`${show ? 'grid' : 'hidden'} grid-cols-2 gap-4 self-start rounded-xl border border-slate-300 bg-slate-50 p-4 lg:grid lg:grid-cols-1`} aria-label="Filtros">
+          <p className="col-span-2 flex items-center gap-2 border-b border-slate-300 pb-3 font-display font-bold text-ink lg:col-span-1"><SlidersHorizontal className="h-4 w-4 text-brand-500" aria-hidden="true" /> Filtrar cursos</p>
+          <label className="block"><span className={lbl}>Categoría</span>
+            <select className={field + on(params.get('category'))} value={params.get('category') || ''} onChange={(e) => set('category', e.target.value)}>
+              <option value="">Todas</option>{cats.data?.map((c) => <option key={c.id} value={c.slug}>{c.name} ({c.courses})</option>)}
             </select></label>
           {FILTERS.map(([key, label, opts]) => (
-            <label key={key} className="block"><span className="label">{label}</span>
-              <select className="input" value={params.get(key) || ''} onChange={(e) => set(key, e.target.value)}>{opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>))}
-          {active > 0 && <button className="btn-outline btn-sm col-span-2 lg:col-span-1" onClick={() => setParams(params.get('sort') ? { sort: params.get('sort') } : {})}>Limpiar filtros</button>}
+            <label key={key} className="block"><span className={lbl}>{label}</span>
+              <select className={field + on(params.get(key))} value={params.get(key) || ''} onChange={(e) => set(key, e.target.value)}>{opts.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>))}
+          {active > 0 && <button className="btn-navy btn-sm col-span-2 lg:col-span-1" onClick={() => setParams(params.get('sort') ? { sort: params.get('sort') } : {})}>Limpiar filtros</button>}
         </aside>
         <LoadState s={courses}>{(list) => list.length ? (
-          <div><p className="mb-4 text-sm text-slate-600" aria-live="polite">{list.length} {list.length === 1 ? 'curso encontrado' : 'cursos encontrados'}</p>
+          <div><p className="mb-4 text-[15px] font-medium text-slate-800" aria-live="polite"><b className="text-ink">{list.length}</b> {list.length === 1 ? 'curso encontrado' : 'cursos encontrados'}</p>
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">{list.map((c) => <CourseCard key={c.id} c={c} />)}</div></div>
         ) : (
           <Empty icon={SearchX} title="No encontramos cursos con esa búsqueda">Prueba con otras palabras o quita algunos filtros.

@@ -54,10 +54,14 @@ export default function Classroom() {
         </aside>
         <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
           <div className="mx-auto max-w-4xl">
+            {!next && !c.certificate && flat.some((l) => l.status !== 'completada') && cur?.status === 'completada' && (() => { const falta = flat.filter((l) => l.status !== 'completada'); return (
+              <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 p-4">
+                <p className="font-bold text-amber-900">Ya casi terminas: te falta completar {falta.length} lección(es) para {c.has_certificate ? 'recibir tu certificado' : 'terminar el curso'}.</p>
+                <ul className="mt-3 space-y-2">{falta.map((l) => <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 text-[15px] font-medium text-ink"><span>{l.title}<span className="block text-xs font-semibold text-slate-600">{c.modules.find((m) => m.lessons.some((x) => x.id === l.id))?.title}</span></span><button className="btn-navy btn-sm" onClick={() => go(l)}>Ir a la lección<ChevronRight className="h-4 w-4" /></button></li>)}</ul>
+              </div>); })()}
             {c.certificate && !c.certificate.revoked && (
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                 <p className="flex items-center gap-2.5 font-semibold text-emerald-900"><Award className="h-6 w-6" />¡Completaste el curso! Tu certificado está listo.</p>
-                <a href={asset(`/api/certificates/${c.certificate.code}/pdf`)} target="_blank" rel="noreferrer" className="btn-navy btn-sm"><Download className="h-4 w-4" />Descargar certificado</a>
               </div>)}
             {!flat.length ? <Empty title="Este curso todavía no tiene lecciones">Vuelve pronto: el instructor está preparando el contenido.</Empty>
               : lesson.loading && !lesson.data ? <PageLoader /> : lesson.error ? <Alert>{lesson.error.message}</Alert> : lesson.data && (
@@ -73,17 +77,20 @@ export default function Classroom() {
                   {lesson.data.type !== 'cuestionario' && (cur?.status === 'completada'
                     ? <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700"><Check className="h-4 w-4" />Completada</span>
                     : <button className="btn-navy" onClick={complete}><Check className="h-4 w-4" />Marcar como completada</button>)}
-                  <button className="btn-primary" disabled={!next} onClick={() => go(next)}>Siguiente<ChevronRight className="h-4 w-4" /></button>
+                  {!next && c.certificate && !c.certificate.revoked
+                    ? <Link to="/mi-cuenta/certificados" className="btn-primary"><Award className="h-4 w-4" />Mis certificados</Link>
+                    : !next && c.progress.done >= c.progress.total ? <Link to="/mi-cuenta" className="btn-primary">Finalizar curso<ChevronRight className="h-4 w-4" /></Link>
+                    : <button className="btn-primary" disabled={!next} onClick={() => go(next)}>Siguiente<ChevronRight className="h-4 w-4" /></button>}
                 </div>
-                <div className="mt-8 flex gap-1 border-b border-slate-200" role="tablist">
+                <div className="mt-8 overflow-hidden rounded-xl border border-slate-300 bg-white shadow-card"><div className="flex flex-wrap gap-1 border-b border-slate-300 bg-slate-50 px-2" role="tablist">
                   {[['resumen', 'Resumen'], ['preguntas', 'Preguntas y respuestas'], ['resena', 'Mi reseña']].map(([id, l]) => (
-                    <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`-mb-px border-b-2 px-3 py-2.5 text-sm font-semibold ${tab === id ? 'border-brand-500 text-brand-500' : 'border-transparent text-slate-600 hover:text-ink'}`}>{l}</button>))}
+                    <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)} className={`-mb-px border-b-[3px] px-4 py-3 text-[15px] font-bold ${tab === id ? 'border-brand-500 bg-white text-brand-600' : 'border-transparent text-slate-800 hover:text-brand-600'}`}>{l}</button>))}
                 </div>
-                <div className="py-5">
-                  {tab === 'resumen' && <p className="text-[15px] text-slate-700">Lección {idx + 1} de {flat.length} · Curso de {c.instructor || 'la plataforma'}. {c.has_certificate ? 'Completa todas las lecciones y aprueba el examen para obtener tu certificado.' : ''}</p>}
+                <div className="p-5">
+                  {tab === 'resumen' && <p className="text-base font-medium text-ink">Lección {idx + 1} de {flat.length} · Curso de {c.instructor || 'la plataforma'}. {c.has_certificate ? 'Completa todas las lecciones y aprueba el examen para obtener tu certificado.' : ''}</p>}
                   {tab === 'preguntas' && <QA key={currentId} lessonId={currentId} />}
                   {tab === 'resena' && <Review course={c} onSaved={course.reload} />}
-                </div>
+                </div></div>
               </>)}
           </div>
         </main>
@@ -139,17 +146,17 @@ function QA({ lessonId }) {
   return (
     <div>
       <form onSubmit={save} className="space-y-3">
-        <label className="label" htmlFor="pregunta">{edit ? 'Editar mi pregunta' : 'Haz una pregunta sobre esta lección'}</label>
-        <textarea id="pregunta" className="input min-h-[90px]" value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe tu duda…" required />
+        <label className="label !text-base !font-bold !text-ink" htmlFor="pregunta">{edit ? 'Editar mi pregunta' : 'Haz una pregunta sobre esta lección'}</label>
+        <textarea id="pregunta" className="input min-h-[90px] !border-slate-400 placeholder:!text-slate-500" value={text} onChange={(e) => setText(e.target.value)} placeholder="Escribe tu duda…" required />
         <div className="flex gap-2"><Button loading={busy} className="btn-navy btn-sm">{edit ? 'Guardar cambios' : 'Enviar pregunta'}</Button>{edit && <button type="button" className="btn-outline btn-sm" onClick={() => { setEdit(null); setText(''); }}>Cancelar</button>}</div>
       </form>
       <div className="mt-6 space-y-4">
-        {s.loading ? <PageLoader /> : s.error ? <Alert>{s.error.message}</Alert> : !s.data.length ? <p className="text-sm text-slate-600">Aún no hay preguntas en esta lección. ¡Sé la primera persona en preguntar!</p> : s.data.map((q) => (
-          <article key={q.id} className="card p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><b>{q.name}{q.mine && ' (tú)'}</b><span className="text-slate-500">{fecha(q.created_at)}</span></div>
-            <p className="mt-1.5 whitespace-pre-line text-[15px]">{q.question}</p>
-            {q.answer ? <div className="mt-3 rounded-lg bg-navy-50 p-3"><p className="text-xs font-bold text-navy-900">Respuesta de {q.answered_by} · {fecha(q.answered_at)}</p><p className="mt-1 whitespace-pre-line text-[15px]">{q.answer}</p></div>
-              : <div className="mt-2 flex items-center gap-3 text-sm"><span className="text-slate-500">Esperando respuesta del instructor</span>{q.mine && <><button className="flex items-center gap-1 font-semibold text-navy-700 hover:underline" onClick={() => { setEdit(q.id); setText(q.question); document.getElementById('pregunta').focus(); }}><Pencil className="h-3.5 w-3.5" />Editar</button><button className="flex items-center gap-1 font-semibold text-red-700 hover:underline" onClick={() => del(q)}><Trash2 className="h-3.5 w-3.5" />Eliminar</button></>}</div>}
+        {s.loading ? <PageLoader /> : s.error ? <Alert>{s.error.message}</Alert> : !s.data.length ? <p className="text-[15px] font-medium text-slate-800">Aún no hay preguntas en esta lección. ¡Sé la primera persona en preguntar!</p> : s.data.map((q) => (
+          <article key={q.id} className="card !border-slate-300 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-[15px]"><b className="text-ink">{q.name}{q.mine && ' (tú)'}</b><span className="font-medium text-slate-700">{fecha(q.created_at)}</span></div>
+            <p className="mt-1.5 whitespace-pre-line text-base text-ink">{q.question}</p>
+            {q.answer ? <div className="mt-3 rounded-lg border border-navy-200 border-l-4 border-l-navy-700 bg-navy-50 p-3"><p className="text-sm font-bold text-navy-900">Respuesta de {q.answered_by} · {fecha(q.answered_at)}</p><p className="mt-1 whitespace-pre-line text-base text-ink">{q.answer}</p></div>
+              : <div className="mt-2 flex items-center gap-3 text-sm"><span className="font-medium text-slate-700">Esperando respuesta del instructor</span>{q.mine && <><button className="flex items-center gap-1 font-semibold text-navy-700 hover:underline" onClick={() => { setEdit(q.id); setText(q.question); document.getElementById('pregunta').focus(); }}><Pencil className="h-3.5 w-3.5" />Editar</button><button className="flex items-center gap-1 font-semibold text-red-700 hover:underline" onClick={() => del(q)}><Trash2 className="h-3.5 w-3.5" />Eliminar</button></>}</div>}
           </article>))}
       </div>
     </div>);
@@ -161,9 +168,9 @@ function Review({ course, onSaved }) {
   const save = async (e) => { e.preventDefault(); setError(''); setBusy(true); try { await api(`/courses/${course.id}/review`, { method: 'POST', body: { rating, comment } }); toast.ok('¡Gracias! Tu reseña fue guardada.'); onSaved(); } catch (er) { setError(er.message); } finally { setBusy(false); } };
   return (
     <form onSubmit={save} className="max-w-xl space-y-3">
-      <p className="label">{course.myReview ? 'Edita tu reseña' : '¿Qué te pareció el curso?'}</p>
+      <p className="label !text-base !font-bold !text-ink">{course.myReview ? 'Edita tu reseña' : '¿Qué te pareció el curso?'}</p>
       <Stars value={rating} onChange={setRating} size="h-8 w-8" />
-      <textarea className="input min-h-[90px]" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Cuenta tu experiencia (opcional)" aria-label="Comentario" maxLength={1000} />
+      <textarea className="input min-h-[90px] !border-slate-400 placeholder:!text-slate-500" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Cuenta tu experiencia (opcional)" aria-label="Comentario" maxLength={1000} />
       <Alert>{error}</Alert>
       <Button loading={busy} disabled={!rating} className="btn-navy btn-sm">{course.myReview ? 'Actualizar reseña' : 'Publicar reseña'}</Button>
     </form>);

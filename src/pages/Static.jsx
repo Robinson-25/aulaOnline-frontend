@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Compass, Lock, Mail } from 'lucide-react';
 import { api, SITE } from '../api.js';
-import { Alert, Button, Field } from '../ui.jsx';
+import { Alert, Button } from '../ui.jsx';
+import { SOCIAL } from '../contacto.jsx';
 
 const Msg = ({ icon: Icon, code, title, text }) => (
   <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-16 text-center">
@@ -20,20 +21,47 @@ export function Contact() {
   const [v, setV] = useState({ name: '', email: '', message: '' }), [state, setState] = useState({});
   const send = async (e) => { e.preventDefault(); setState({ loading: true }); try { await api('/contact', { method: 'POST', body: v }); setState({ ok: true }); } catch (er) { setState({ error: er.message }); } };
   const bind = (k) => ({ value: v[k], onChange: (e) => setV({ ...v, [k]: e.target.value }) });
+  // Etiquetas en negrita y cuadros con borde más marcado
+  const lbl = 'mb-1.5 block text-[15px] font-bold text-ink';
+  const field = 'input border-slate-400 font-medium text-ink placeholder:text-slate-500';
+  const req = <span className="text-brand-500" aria-hidden="true"> *</span>;
   return (
-    <div className="container-x max-w-2xl py-12">
-      <p className="eyebrow">Contacto</p><h1 className="h-section mt-1">¿En qué podemos ayudarte?</h1>
-      <p className="mt-2 text-slate-600">Escríbenos y te responderemos al correo que indiques.</p>
-      {state.ok ? <div className="mt-6"><Alert type="ok">Recibimos tu mensaje. Te responderemos pronto.</Alert></div> : (
-        <form onSubmit={send} className="card mt-6 space-y-4 p-6" noValidate>
-          <Alert>{state.error}</Alert>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Nombre" required><input className="input" autoComplete="name" required {...bind('name')} /></Field>
-            <Field label="Correo electrónico" required><input className="input" type="email" autoComplete="email" required {...bind('email')} /></Field>
+    <div className="relative overflow-hidden bg-gradient-to-b from-navy-50 via-white to-white">
+      <div className="absolute -left-24 top-10 h-72 w-72 rounded-full bg-navy-100/70 blur-3xl" aria-hidden="true" />
+      <div className="absolute -right-24 top-40 h-72 w-72 rounded-full bg-brand-100/60 blur-3xl" aria-hidden="true" />
+      <div className="container-x relative py-14">
+        {/* Título centrado */}
+        <div className="text-center">
+          <p className="eyebrow">Contacto</p>
+          <h1 className="h-section mt-1">¿En qué podemos ayudarte?</h1>
+          <p className="mt-2 text-[17px] font-medium text-slate-700">Escríbenos y te responderemos al correo que indiques.</p>
+        </div>
+
+        {/* Redes a la izquierda + formulario, todo centrado */}
+        <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-4 sm:flex-row sm:items-start sm:gap-5">
+          <ul className="flex shrink-0 gap-2.5 rounded-2xl border border-slate-300 bg-white p-2.5 shadow-card sm:flex-col" aria-label="Redes sociales">
+            {SOCIAL.map(([name, href, Icon, hover]) => (
+              <li key={name}>
+                <a href={href} target="_blank" rel="noreferrer" aria-label={name} title={name} className={`flex h-12 w-12 items-center justify-center rounded-xl bg-navy-50 text-navy-900 ring-1 ring-slate-300 transition duration-200 hover:-translate-y-0.5 hover:text-white hover:shadow-md hover:ring-0 ${hover}`}>
+                  <Icon className="h-5 w-5" />
+                </a>
+              </li>))}
+          </ul>
+
+          <div className="w-full min-w-0 flex-1">
+            {state.ok ? <Alert type="ok">Recibimos tu mensaje. Te responderemos pronto.</Alert> : (
+              <form onSubmit={send} className="space-y-4 rounded-2xl border border-slate-300 bg-white p-6 shadow-card sm:p-7" noValidate>
+                <Alert>{state.error}</Alert>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="block"><span className={lbl}>Nombre{req}</span><input className={field} autoComplete="name" required {...bind('name')} /></label>
+                  <label className="block"><span className={lbl}>Correo electrónico{req}</span><input className={field} type="email" autoComplete="email" required {...bind('email')} /></label>
+                </div>
+                <label className="block"><span className={lbl}>Mensaje{req}</span><textarea className={`${field} min-h-[160px]`} required {...bind('message')} /></label>
+                <Button loading={state.loading} className="btn-primary w-full sm:w-auto"><Mail className="h-4 w-4" />Enviar mensaje</Button>
+              </form>)}
           </div>
-          <Field label="Mensaje" required><textarea className="input min-h-[140px]" required {...bind('message')} /></Field>
-          <Button loading={state.loading} className="btn-primary"><Mail className="h-4 w-4" />Enviar mensaje</Button>
-        </form>)}
+        </div>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,9 @@ import Checkout from './pages/Checkout.jsx';
 import Account from './pages/Account.jsx';
 import Verify from './pages/Verify.jsx';
 import { Contact, Terms, Privacy, NotFound } from './pages/Static.jsx';
+import LayoutClases from './clases-online/LayoutClases.jsx';
+import Tablero from './clases-online/Tablero.jsx';
+import CursoEnVivo from './clases-online/CursoEnVivo.jsx';
 
 const Classroom = lazy(() => import('./pages/Classroom.jsx'));
 
@@ -24,6 +27,10 @@ export default function App() {
     <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/aula/:slug/:lessonId?" element={<Private><Classroom /></Private>} />
+        <Route element={<LayoutClases />}>
+          <Route path="/clases-en-vivo" element={<Tablero />} />
+          <Route path="/clases-en-vivo/:slug/:seccion?" element={<CursoEnVivo />} />
+        </Route>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/cursos" element={<Catalog />} />
